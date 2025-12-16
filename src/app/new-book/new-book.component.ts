@@ -42,7 +42,7 @@ export class NewBookComponent {
     const formData = new FormData();
     formData.append('image', this.selectedFile, this.imageName);
 
-    return this.http.post<{ imageUrl: string }>('http://localhost:3000/api/upload', formData);
+    return this.http.post<{ imageUrl: string }>('http://localhost:5000/api/upload', formData);
   }
 
   onSubmit() {
@@ -52,10 +52,9 @@ export class NewBookComponent {
         this.book.image = res.imageUrl;
 
         // ensuite on poste le livre complet
-        this.http.post('http://localhost:3000/api/books', this.book)
+        this.http.post('http://localhost:5000/api/books', this.book)
           .subscribe({
             next: () => {
-              alert('Livre ajouté avec image !');
               this.book = { title: '', author: '', year: null, available: true, image: '' };
               this.selectedFile = null;
               this.imageName = '';
