@@ -5,19 +5,13 @@ import { FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-<<<<<<< HEAD
 import { CatalogueComponent } from './catalogue/catalogue.component';
-=======
->>>>>>> b99e240 (new-book)
 import { NewBookComponent } from './new-book/new-book.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-<<<<<<< HEAD
     CatalogueComponent,
-=======
->>>>>>> b99e240 (new-book)
     NewBookComponent,
   ],
   imports: [
