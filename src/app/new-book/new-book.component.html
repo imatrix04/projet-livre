@@ -1,0 +1,43 @@
+<h2>Ajouter un livre</h2>
+
+<form (ngSubmit)="onSubmit()" #bookForm="ngForm">
+  <div>
+    <label for="title">Titre :</label>
+    <input type="text" id="title" name="title" [(ngModel)]="book.title" required />
+  </div>
+
+  <div>
+    <label for="author">Auteur :</label>
+    <input type="text" id="author" name="author" [(ngModel)]="book.author" required />
+  </div>
+
+  <div>
+    <label for="year">Année :</label>
+    <input type="number" id="year" name="year" [(ngModel)]="book.year" />
+  </div>
+
+  <div>
+    <label for="available">Disponible :</label>
+    <input type="checkbox" id="available" name="available" [(ngModel)]="book.available" />
+  </div>
+
+  <div>
+    <label for="imageFile">Choisir une image :</label>
+    <input type="file" id="imageFile" (change)="onFileSelected($event)" accept="image/*" />
+  </div>
+
+  <div>
+    <label for="imageName">Nom du fichier image :</label>
+    <input type="text" id="imageName" [(ngModel)]="imageName" name="imageName" placeholder="ex: monlivre.jpg" />
+  </div>
+
+  <button type="submit" [disabled]="bookForm.invalid">Ajouter</button>
+</form>
+
+<div *ngIf="uploadedImageUrl">
+  <p>Image uploadée :</p>
+  <img [src]="uploadedImageUrl" alt="Image du livre" style="max-width: 200px; display: block;" />
+  <p>Nom : {{ imageName }}</p>
+</div>
+
+<p *ngIf="message">{{ message }}</p>
