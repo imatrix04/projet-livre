@@ -36,7 +36,6 @@ export class CatalogueComponent {
     if (!this.searchTerm) {
       return this.books;
     }
-    console.log(this.searchTerm);
     
     return this.books.filter(book =>
       book.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
