@@ -6,7 +6,6 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
   templateUrl: './new-book.component.html',
   styleUrls: ['./new-book.component.scss']
 })
-
 export class NewBookComponent {
   book = {
     title: '',
