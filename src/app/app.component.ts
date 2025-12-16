@@ -3,11 +3,12 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss', '../../node_modules/@fortawesome/fontawesome-free/css/all.css']
 })
 export class AppComponent {
 
-  title = 'Bibliothèque Numérique';
+  title: string = 'Bibliothèque Numérique';
+  searchTerm: string = '';
 
   books = [
     {
@@ -32,5 +33,17 @@ export class AppComponent {
       image: 'assets/images/Letranger_Camus.jpg'
     }
   ];
+
+  get filteredBooks() {
+    if (!this.searchTerm) {
+      return this.books;
+    }
+    console.log(this.searchTerm);
+    
+    return this.books.filter(book =>
+      book.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
 
 }
