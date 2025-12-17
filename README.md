@@ -1,27 +1,92 @@
-# Front
+## 📚 Application de Gestion de Bibliothèque (Micro-services)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.2.16.
+Application distribuée composée de 3 micro-services (Node.js) et d'une base de données relationnelle (PostgreSQL).
 
-## Development server
+---
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## 📋 Prérequis
 
-## Code scaffolding
+Avant de lancer l'application, assurez-vous d'avoir :
+1.  **Node.js** installé sur votre machine.
+2.  **PostgreSQL** lancé localement.
+    * *Configuration par défaut utilisée :* User: `postgres` / Password: `root` / Port: `5432`.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+---
 
-## Build
+## 🚀 Installation et Lancement Rapide (Windows)
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Un script d'automatisation est fourni pour installer les dépendances et lancer les 3 services simultanément.
 
-## Running unit tests
+1.  À la racine du projet, double-cliquez sur le fichier :
+    👉 **`start_all.bat`**
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+2.  Le script va ouvrir 3 fenêtres de terminal (une pour chaque service), installer les modules (`npm install`) et démarrer les serveurs.
 
-## Running end-to-end tests
+3.  Une fois que les fenêtres affichent *"Server running on port..."*, ouvrez le fichier `front-end/index.html` dans votre navigateur.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+---
 
-## Further help
+## ⚙️ Lancement Manuel (Mac/Linux ou cas d'erreur)
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Si le script `.bat` ne fonctionne pas sur votre environnement, voici la procédure manuelle :
+
+Ouvrez 3 terminaux distincts et exécutez les commandes suivantes :
+
+**Terminal 1 : Service Livres**
+```bash
+cd service-livres
+npm install
+node server.js
+# Tourne sur http://localhost:8001
+
+**Terminal 2 : Service Abonnés**
+```bash
+cd service-abonnes
+npm install
+node server.js
+# Tourne sur http://localhost:8002
+
+**Terminal 3 : Service Emprunts**
+```bash
+cd service-emprunts
+npm install
+node server.js
+# Tourne sur http://localhost:8003
+
+---
+
+## ✅ Fonctionnalités Implémentées
+1. Gestion des Ressources
+Livres : Ajout (Titre, Auteur, Éditeur, Emplacement), Consultation, Recherche.
+
+Abonnés : Ajout, Liste, Suppression.
+
+2. Logique Métier (Service Emprunts)
+Réservation : Mise à jour instantanée de la disponibilité (Communication inter-services).
+
+Retour : Remise en stock du livre.
+
+Règles de gestion strictes :
+
+❌ Interdiction d'emprunter plus de 3 livres simultanément.
+
+❌ Blocage de l'emprunt si l'utilisateur a un livre en retard (> 30 jours).
+
+3. Interface Front-end
+Accueil : Dashboard général.
+
+Catalogue : Recherche dynamique de livres.
+
+Administration : Gestion complète des livres et adhérents.
+
+
+---
+
+## 🛠 Stack Technique
+Backend : Node.js, Express.
+
+Base de données : PostgreSQL, Sequelize (ORM).
+
+Communication : Axios (HTTP REST).
+
+Frontend : HTML5, CSS3, JavaScript Vanilla.

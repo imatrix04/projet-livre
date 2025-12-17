@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Administration des Livres</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background-color: #f9fafb; }
+        h1 { color: #1f2937; text-align: center; }
+        
+        .nav { margin-bottom: 2rem; }
+        .btn-back { text-decoration: none; color: #4b5563; font-weight: bold; }
+
+        /* Carte Formulaire */
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; margin-bottom: 2rem; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .full-width { grid-column: 1 / -1; }
+        
+        label { display: block; font-weight: 600; margin-bottom: 5px; color: #374151; font-size: 0.9rem; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        textarea { resize: vertical; height: 80px; }
+        
+        button { background-color: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 1rem; width: 100%; }
+        button:hover { background-color: #1d4ed8; }
+
+        /* Tableau */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f3f4f6; font-weight: 600; }
+        
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .bg-green { background-color: #d1fae5; color: #065f46; }
+        .bg-red { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="index.html" class="btn-back">⬅️ Retour au Tableau de bord</a>
+    </div>
+
+    <h1>📚 Gestion du Catalogue</h1>
+
+    <div class="card">
+        <h3>Ajouter un nouveau livre</h3>
+        <div class="form-grid">
+            <div>
+                <label>Titre du livre *</label>
+                <input type="text" id="title" placeholder="Ex: Harry Potter">
+            </div>
+
+            <div>
+                <label>Auteur *</label>
+                <input type="text" id="author" placeholder="Ex: J.K. Rowling">
+            </div>
+
+            <div>
+                <label>Maison d'édition *</label>
+                <input type="text" id="publisher" placeholder="Ex: Gallimard Jeunesse">
+            </div>
+
+            <div>
+                <label>Emplacement (Rayon/Étagère)</label>
+                <input type="text" id="location" placeholder="Ex: Rayon B - Fantastique">
+            </div>
+
+            <div class="full-width">
+                <label>Résumé court</label>
+                <textarea id="summary" placeholder="Un petit résumé de l'histoire..."></textarea>
+            </div>
+        </div>
+        <button onclick="addBook()">Enregistrer le livre</button>
+    </div>
+
+    <div class="card">
+        <h3>Livres en rayon</h3>
+
+        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <input type="text" id="searchBook" placeholder="🔍 Rechercher un titre, un auteur..." 
+                onkeyup="filterBooks()" 
+                style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 1rem;">
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Titre</th>
+                    <th>Auteur</th>
+                    <th>Éditeur</th> <th>Emplacement</th> <th>État</th>
+                </tr>
+            </thead>
+            <tbody id="books-table">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+    const URL_LIVRES = 'http://localhost:8001/books';
+    
+    // On garde la liste complète en mémoire ici
+    let allBooksData = [];
+
+    // 1. Charger la liste (une seule fois au début)
+    async function loadBooks() {
+        try {
+            const res = await fetch(URL_LIVRES);
+            allBooksData = await res.json();
+            
+            // On affiche tout par défaut
+            renderTable(allBooksData);
+            
+        } catch (err) { console.error(err); }
+    }
+
+    // 2. Afficher le tableau (Fonction d'affichage pure)
+    function renderTable(books) {
+        const tbody = document.getElementById('books-table');
+        
+        if (books.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Aucun livre trouvé 😕</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = books.map(b => `
+            <tr>
+                <td><strong>${b.title}</strong></td>
+                <td>${b.author}</td>
+                <td>${b.publisher || '-'}</td>
+                <td style="font-size:0.9rem; color:#666;">📍 ${b.location || '?'}</td>
+                <td>
+                    <span class="badge ${b.available ? 'bg-green' : 'bg-red'}">
+                        ${b.available ? 'Dispo' : 'Emprunté'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. La fonction de Recherche (Appelée à chaque touche)
+    function filterBooks() {
+        const searchText = document.getElementById('searchBook').value.toLowerCase();
+
+        // On filtre la liste globale
+        const filteredList = allBooksData.filter(book => {
+            const title = book.title.toLowerCase();
+            const author = book.author.toLowerCase();
+            const publisher = (book.publisher || '').toLowerCase();
+            
+            // On garde si le texte est trouvé dans le Titre OU l'Auteur OU l'Éditeur
+            return title.includes(searchText) || 
+                   author.includes(searchText) || 
+                   publisher.includes(searchText);
+        });
+
+        // On ré-affiche seulement les résultats
+        renderTable(filteredList);
+    }
+
+    // --- Fonction d'ajout (inchangée) ---
+    async function addBook() {
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const publisher = document.getElementById('publisher').value;
+        const location = document.getElementById('location').value;
+        const summary = document.getElementById('summary').value;
+
+        if(!title || !author) {
+            alert("Le titre et l'auteur sont obligatoires !");
+            return;
+        }
+
+        try {
+            const res = await fetch(URL_LIVRES, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, publisher, location, summary })
+            });
+
+            if (res.ok) {
+                alert("Livre ajouté !");
+                document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+                loadBooks(); // On recharge la liste complète
+            } else {
+                alert("Erreur lors de l'ajout");
+            }
+        } catch (err) { alert("Erreur serveur"); }
+    }
+
+    // Lancement
+    loadBooks();
+</script>
+</body>
+</html>

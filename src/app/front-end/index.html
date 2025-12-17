@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bibliothèque Microservices - Admin</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background-color: #f9fafb; }
+        h1 { text-align: center; color: #1f2937; }
+        .container { display: flex; gap: 2rem; margin-bottom: 2rem; }
+        .column { flex: 1; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
+        h2 { border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; margin-top: 0; font-size: 1.2rem; color: #1e40af; }
+        
+        /* Listes */
+        .item { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .item:hover { background-color: #eff6ff; }
+        .selected { background-color: #dbeafe; border-left: 4px solid #2563eb; }
+        
+        /* Badges et Boutons */
+        .badge { font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        .badge-success { background-color: #d1fae5; color: #065f46; }
+        .badge-error { background-color: #fee2e2; color: #991b1b; }
+        .badge-count { background-color: #e5e7eb; color: #374151; margin-left: 5px; }
+
+        button { padding: 0.5rem 1rem; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        .btn-reserve { background: #2563eb; color: white; width: 100%; font-size: 1.1rem; padding: 1rem; }
+        .btn-reserve:hover { background: #1d4ed8; }
+        .btn-return { background-color: #d97706; color: white; font-size: 0.8rem; }
+        .btn-return:hover { background-color: #b45309; }
+
+        /* Tableau des emprunts */
+        .dashboard { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-top: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f3f4f6; font-weight: 600; }
+        tr:hover { background-color: #f9fafb; }
+        
+        #message { margin-top: 1rem; padding: 1rem; border-radius: 4px; text-align: center; display: none; }
+        .msg-success { background-color: #d1fae5; color: #065f46; display: block !important; }
+        .msg-error { background-color: #fee2e2; color: #991b1b; display: block !important; }
+    </style>
+</head>
+<body>
+    <h1>📚 Gestion de Bibliothèque</h1>
+
+<div style="text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
+    <a href="admin-books.html" style="text-decoration: none; color: #2563eb; font-weight: bold; border: 1px solid #2563eb; padding: 8px 16px; border-radius: 20px;">
+        ⚙️ Gestion des Livres
+    </a>
+
+    <a href="admin-users.html" style="text-decoration: none; color: #2563eb; font-weight: bold; border: 1px solid #2563eb; padding: 8px 16px; border-radius: 20px;">
+        ⚙️ Gestion des Abonnés
+    </a>
+    
+    <a href="catalogue.html" style="text-decoration: none; background-color: #2563eb; color: white; font-weight: bold; padding: 8px 16px; border-radius: 20px;">
+        🔍 Catalogue & Recherche
+    </a>
+</div>
+
+    <div class="container">
+        <div class="column">
+            <h2>👤 1. Abonnés</h2>
+
+            <input type="text" id="searchUserInput" placeholder="🔍 Filtrer par nom..." 
+                onkeyup="renderUsers()" 
+                style="width: 90%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+
+            <div id="users-list">Chargement...</div>
+        </div>
+
+        <div class="column">
+            <h2>📖 2. Livres</h2>
+
+            <input type="text" id="searchBookInput" placeholder="🔍 Filtrer par titre..." 
+                onkeyup="renderBooks()" 
+                style="width: 90%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+
+            <div id="books-list">Chargement...</div>
+        </div>
+    </div>
+
+    <button class="btn-reserve" onclick="reserverLivre()">Réserver le livre sélectionné</button>
+    <div id="message"></div>
+
+    <div class="dashboard">
+        <h2>📊 Liste des livres actuellement empruntés</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Livre</th>
+                    <th>Emprunté par</th>
+                    <th>Depuis</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="loans-list">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        // URLs
+        const URL_LIVRES = 'http://localhost:8001/books';
+        const URL_ABONNES = 'http://localhost:8002/users';
+        const URL_EMPRUNTS_BASE = 'http://localhost:8003';
+
+        // Variables globales pour stocker les données
+        let allUsers = [];
+        let allBooks = [];
+        let allLoans = [];
+
+        let selectedUser = null;
+        let selectedBook = null;
+
+        // Démarrage : On charge tout en parallèle
+        async function init() {
+            await Promise.all([loadUsersData(), loadBooksData(), loadLoansData()]);
+            renderAll(); // Une fois tout chargé, on affiche
+        }
+
+        // --- 1. CHARGEMENT DES DONNÉES (Back-end calls) ---
+        async function loadUsersData() {
+            try { allUsers = await (await fetch(URL_ABONNES)).json(); } 
+            catch(e) { console.error("Err users", e); }
+        }
+        async function loadBooksData() {
+            try { allBooks = await (await fetch(URL_LIVRES)).json(); } 
+            catch(e) { console.error("Err books", e); }
+        }
+        async function loadLoansData() {
+            try { 
+                // On appelle la nouvelle route qu'on vient de créer
+                allLoans = await (await fetch(URL_EMPRUNTS_BASE + '/loans')).json(); 
+            } catch(e) { console.error("Err loans", e); }
+        }
+
+        // --- 2. AFFICHAGE (Rendering) ---
+        function renderAll() {
+            renderUsers();
+            renderBooks();
+            renderLoansTable();
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('users-list');
+            
+            // 1. Récupérer le texte tapé
+            const searchText = document.getElementById('searchUserInput') 
+                ? document.getElementById('searchUserInput').value.toLowerCase() 
+                : '';
+
+            // 2. Filtrer la liste globale
+            const filteredUsers = allUsers.filter(user => 
+                user.name.toLowerCase().includes(searchText)
+            );
+
+            // 3. Afficher le résultat
+            if (filteredUsers.length === 0) {
+                container.innerHTML = '<div style="padding:10px; color:#666;">Aucun abonné trouvé.</div>';
+                return;
+            }
+
+            // --- NOUVEAUTÉ : On ne prend que les 10 premiers ---
+            const usersToDisplay = filteredUsers.slice(0, 5);
+
+            // Petit message d'info si la liste est coupée (Optionnel)
+            let infoMessage = '';
+            if (filteredUsers.length > 5) {
+                infoMessage = `<div style="padding:5px; font-size:0.8rem; color:#888; text-align:center;">
+                                Affichage de 5 abonnés sur ${filteredUsers.length} (Utilisez la recherche)
+                            </div>`;
+            }
+
+            const htmlList = usersToDisplay.map(user => {
+                const userLoansCount = allLoans.filter(l => l.userId == user.id).length;
+                const isSelected = selectedUser == user.id ? 'selected' : '';
+                
+                return `<div class="item ${isSelected}" onclick="selectUser('${user.id}')">
+                            <span>${user.name}</span>
+                            <span class="badge badge-count">📖 ${userLoansCount} / 3</span>
+                        </div>`;
+            }).join('');
+
+            container.innerHTML = htmlList + infoMessage;
+        }
+
+        function renderBooks() {
+            const container = document.getElementById('books-list');
+            
+            // 1. Récupérer le texte
+            const searchText = document.getElementById('searchBookInput') 
+                ? document.getElementById('searchBookInput').value.toLowerCase() 
+                : '';
+
+            // 2. Filtrer
+            const filteredBooks = allBooks.filter(book => 
+                book.title.toLowerCase().includes(searchText) || 
+                book.author.toLowerCase().includes(searchText)
+            );
+
+            // 3. Afficher
+            if (filteredBooks.length === 0) {
+                container.innerHTML = '<div style="padding:10px; color:#666;">Aucun livre trouvé.</div>';
+                return;
+            }
+
+            // --- NOUVEAUTÉ : On coupe à 10 ---
+            const booksToDisplay = filteredBooks.slice(0, 5);
+
+            let infoMessage = '';
+            if (filteredBooks.length > 5) {
+                infoMessage = `<div style="padding:5px; font-size:0.8rem; color:#888; text-align:center;">
+                                Affichage de 5 livres sur ${filteredBooks.length} (Utilisez la recherche)
+                            </div>`;
+            }
+
+            const htmlList = booksToDisplay.map(book => {
+                const isSelected = selectedBook == book.id ? 'selected' : '';
+                const statusBadge = book.available 
+                    ? `<span class="badge badge-success">Dispo</span>` 
+                    : `<span class="badge badge-error">Indispo</span>`;
+                
+                const style = !book.available ? 'opacity: 0.7;' : '';
+
+                return `<div class="item ${isSelected}" style="${style}" onclick="selectBook('${book.id}', ${book.available})">
+                            <span>${book.title} <small style="color:#666">(${book.author})</small></span>
+                            ${statusBadge}
+                        </div>`;
+            }).join('');
+
+            container.innerHTML = htmlList + infoMessage;
+        }
+
+        function renderLoansTable() {
+            const tbody = document.getElementById('loans-list');
+            
+            if (allLoans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Aucun emprunt en cours</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allLoans.map(loan => {
+                // On croise les données (ID -> Nom)
+                const book = allBooks.find(b => b.id == loan.bookId) || { title: 'Livre inconnu' };
+                const user = allUsers.find(u => u.id == loan.userId) || { name: 'Utilisateur inconnu' };
+                const duration = calculateDuration(loan.createdAt || loan.date);
+
+                return `<tr>
+                            <td><strong>${book.title}</strong></td>
+                            <td>${user.name}</td>
+                            <td>${duration}</td>
+                            <td>
+                                <button class="btn-return" onclick="rendreLivre('${loan.bookId}')">
+                                    ↩️ Rendre
+                                </button>
+                            </td>
+                        </tr>`;
+            }).join('');
+        }
+
+        // --- 3. UTILITAIRES ---
+        function calculateDuration(dateString) {
+            const start = new Date(dateString);
+            const now = new Date();
+            // Différence en millisecondes
+            const diff = now - start;
+            // Conversion en minutes/heures/jours
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `Il y a ${days} jour(s)`;
+            if (hours > 0) return `Il y a ${hours} heure(s)`;
+            return `Il y a ${minutes} min`;
+        }
+
+        // --- 4. INTERACTIONS ---
+        function selectUser(id) {
+            selectedUser = id;
+            renderUsers(); // Re-render pour afficher la sélection
+        }
+
+        function selectBook(id, available) {
+            if (!available) return; // On empêche de sélectionner un livre déjà pris
+            selectedBook = id;
+            renderBooks();
+        }
+
+        async function reserverLivre() {
+            const msgDiv = document.getElementById('message'); // Assure-toi que l'ID est bon
+            
+            // Vérification de sécurité
+            if (!selectedUser || !selectedBook) {
+                alert("Veuillez sélectionner un abonné ET un livre !");
+                return;
+            }
+
+            try {
+                const response = await fetch(URL_EMPRUNTS_BASE + '/reservations', { // Vérifie que URL_EMPRUNTS_BASE est bien définie
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: selectedUser,
+                        bookId: selectedBook
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // 1. Afficher le succès
+                    if(msgDiv) {
+                        msgDiv.innerText = `Succès : ${result.message}`;
+                        msgDiv.className = 'msg-success'; // ou 'success' selon ton CSS
+                        msgDiv.style.display = 'block';
+                    } else {
+                        alert(`Succès : ${result.message}`);
+                    }
+
+                    // 2. Recharger la page intelligemment
+                    // Si la fonction 'init' existe (version Dashboard), on l'utilise
+                    if (typeof init === 'function') {
+                        await init(); 
+                    } 
+                    // Sinon, si 'loadBooks' existe (version Simple), on l'utilise
+                    else if (typeof loadBooks === 'function') {
+                        await loadBooks();
+                    }
+                    // Sinon, on recharge toute la page brutalement (roue de secours)
+                    else {
+                        window.location.reload();
+                    }
+
+                } else {
+                    // Erreur renvoyée par le serveur (ex: Quota dépassé)
+                    if(msgDiv) {
+                        msgDiv.innerText = `Erreur : ${result.error}`;
+                        msgDiv.className = 'msg-error'; // ou 'error'
+                        msgDiv.style.display = 'block';
+                    } else {
+                        alert(`Erreur : ${result.error}`);
+                    }
+                }
+            } catch (err) {
+                // C'est ici que tu tombais avant
+                console.error("Erreur Javascript :", err); // Regarde la console F12 pour voir la vraie erreur
+                if(msgDiv) {
+                    msgDiv.innerText = "Erreur technique (Voir console F12)";
+                    msgDiv.className = 'msg-error';
+                    msgDiv.style.display = 'block';
+                }
+            }
+        }
+
+        async function rendreLivre(bookId) {
+            if (!confirm("Confirmer le retour ?")) return;
+            try {
+                const res = await fetch(URL_EMPRUNTS_BASE + '/returns', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bookId: bookId })
+                });
+                if (res.ok) {
+                    showMessage("Livre rendu !", 'success');
+                    init(); // Mise à jour globale
+                }
+            } catch (e) { showMessage("Erreur serveur", 'error'); }
+        }
+
+        function showMessage(text, type) {
+            const div = document.getElementById('message');
+            div.innerText = text;
+            div.className = type === 'success' ? 'msg-success' : 'msg-error';
+            setTimeout(() => { div.style.display = 'none'; }, 3000);
+        }
+
+        // Lancement
+        init();
+    </script>
+</body>
+</html>

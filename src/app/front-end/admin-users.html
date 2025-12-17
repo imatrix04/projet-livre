@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Administration des Adhérents</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background-color: #f9fafb; }
+        h1 { text-align: center; color: #1f2937; }
+        
+        /* Navigation */
+        .nav { margin-bottom: 2rem; }
+        .btn-back { text-decoration: none; color: #4b5563; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .btn-back:hover { color: #111827; }
+
+        /* Formulaire d'ajout */
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 2rem; border: 1px solid #e5e7eb; }
+        .form-group { display: flex; gap: 1rem; align-items: flex-end; }
+        .input-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        input { padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 1rem; }
+        label { font-size: 0.9rem; font-weight: 600; color: #374151; }
+        
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-add { background-color: #10b981; } /* Vert */
+        .btn-add:hover { background-color: #059669; }
+        .btn-delete { background-color: #ef4444; font-size: 0.8rem; } /* Rouge */
+        .btn-delete:hover { background-color: #dc2626; }
+
+        /* Tableau */
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f3f4f6; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+
+        #message { margin-top: 1rem; padding: 1rem; border-radius: 4px; text-align: center; display: none; }
+        .msg-success { background-color: #d1fae5; color: #065f46; display: block !important; }
+        .msg-error { background-color: #fee2e2; color: #991b1b; display: block !important; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="index.html" class="btn-back">⬅️ Retour au Tableau de bord</a>
+    </div>
+
+    <h1>👥 Gestion des Adhérents</h1>
+
+    <div class="card">
+        <h3>Ajouter un nouvel abonné</h3>
+        <div class="form-group">
+            <div class="input-group">
+                <label>Nom complet</label>
+                <input type="text" id="name" placeholder="Ex: Marie Curie">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="Ex: marie@science.com">
+            </div>
+            <button class="btn-add" onclick="addUser()">Ajouter</button>
+        </div>
+    </div>
+
+    <div id="message"></div>
+
+    <div class="card">
+        <h3>Liste des abonnés existants</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="users-table">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        const URL_ABONNES = 'http://localhost:8002/users';
+
+        // 1. Charger et afficher les utilisateurs
+        async function loadUsers() {
+            try {
+                const res = await fetch(URL_ABONNES);
+                const users = await res.json();
+                
+                const tbody = document.getElementById('users-table');
+                
+                if(users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Aucun abonné enregistré.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>#${user.id}</td>
+                        <td><strong>${user.name}</strong></td>
+                        <td>${user.email}</td>
+                        <td style="text-align: right;">
+                            <button class="btn-delete" onclick="deleteUser('${user.id}')">Supprimer 🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Erreur de chargement", err);
+            }
+        }
+
+        // 2. Ajouter un utilisateur
+        async function addUser() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            if (!name || !email) {
+                alert("Veuillez remplir tous les champs !");
+                return;
+            }
+
+            try {
+                const res = await fetch(URL_ABONNES, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (res.ok) {
+                    showMessage("Abonné ajouté avec succès !", 'success');
+                    document.getElementById('name').value = ''; // Vider les champs
+                    document.getElementById('email').value = '';
+                    loadUsers(); // Recharger la liste
+                } else {
+                    showMessage("Erreur lors de l'ajout.", 'error');
+                }
+            } catch (err) {
+                showMessage("Erreur serveur.", 'error');
+            }
+        }
+
+        // 3. Supprimer un utilisateur
+        async function deleteUser(id) {
+            if (!confirm("Êtes-vous sûr de vouloir supprimer cet abonné ?")) return;
+
+            try {
+                const res = await fetch(`${URL_ABONNES}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    showMessage("Abonné supprimé.", 'success');
+                    loadUsers(); // Recharger la liste
+                } else {
+                    const data = await res.json();
+                    // Souvent l'erreur vient du fait que l'user a encore des livres
+                    showMessage(data.error || "Erreur lors de la suppression.", 'error');
+                }
+            } catch (err) {
+                showMessage("Erreur serveur.", 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const div = document.getElementById('message');
+            div.innerText = text;
+            div.className = type === 'success' ? 'msg-success' : 'msg-error';
+            setTimeout(() => { div.style.display = 'none'; }, 3000);
+        }
+
+        // Démarrage
+        loadUsers();
+    </script>
+</body>
+</html>
