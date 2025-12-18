@@ -13,6 +13,18 @@ Avant de lancer l'application, assurez-vous d'avoir :
 
 ---
 
+## 💾 Jeu de données (Seeding)
+
+Pour tester l'application avec des données pré-remplies (15 livres et 10 utilisateurs) :
+
+1.  Ouvrez **pgAdmin** ou votre client SQL.
+2.  Connectez-vous à votre base de données.
+3.  Ouvrez le fichier **`database_seed.sql`** (situé à la racine du projet).
+4.  Exécutez le script.
+    * *Cela nettoiera les tables et insérera des données de test.*
+
+---
+
 ## 🚀 Installation et Lancement Rapide (Windows)
 
 Un script d'automatisation est fourni pour installer les dépendances et lancer les 3 services simultanément.
@@ -20,9 +32,9 @@ Un script d'automatisation est fourni pour installer les dépendances et lancer 
 1.  À la racine du projet, double-cliquez sur le fichier :
     👉 **`start_all.bat`**
 
-2.  Le script va ouvrir 3 fenêtres de terminal (une pour chaque service), installer les modules (`npm install`) et démarrer les serveurs.
+2.  Le script va ouvrir 4 fenêtres de terminal (une pour chaque service), installer les modules (`npm install`) et démarrer les serveurs.
 
-3.  Une fois que les fenêtres affichent *"Server running on port..."*, ouvrez le fichier `front-end/index.html` dans votre navigateur.
+3.  Une fois que les fenêtres affichent *"Server running on port..."*, cliquez sur le lien localhost du terminal FRONT.
 
 ---
 
@@ -52,6 +64,13 @@ cd service-emprunts
 npm install
 node server.js
 # Tourne sur http://localhost:8003
+
+**Terminal 4 : Service Front**
+```bash
+cd service-front
+npm install
+node server.js
+# Tourne sur http://localhost:8000
 
 ---
 
