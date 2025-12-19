@@ -27,14 +27,14 @@ Pour tester l'application avec des données pré-remplies (15 livres et 10 utili
 
 ## 🚀 Installation et Lancement Rapide (Windows)
 
-Un script d'automatisation est fourni pour installer les dépendances et lancer les 3 services simultanément.
+Un script d'automatisation est fourni pour installer les dépendances et lancer les 4 services simultanément.
 
 1.  À la racine du projet, double-cliquez sur le fichier :
     👉 **`start_all.bat`**
 
 2.  Le script va ouvrir 4 fenêtres de terminal (une pour chaque service), installer les modules (`npm install`) et démarrer les serveurs.
 
-3.  Une fois que les fenêtres affichent *"Server running on port..."*, cliquez sur le lien localhost du terminal FRONT.
+3.  Une fois que les fenêtres affichent *"Server running on port..."*, cliquez sur le lien localhost du terminal SITE WEB.
 
 ---
 
@@ -49,6 +49,7 @@ Ouvrez 3 terminaux distincts et exécutez les commandes suivantes :
 cd service-livres
 npm install
 node server.js
+```
 # Tourne sur http://localhost:8001
 
 **Terminal 2 : Service Abonnés**
@@ -56,6 +57,7 @@ node server.js
 cd service-abonnes
 npm install
 node server.js
+```
 # Tourne sur http://localhost:8002
 
 **Terminal 3 : Service Emprunts**
@@ -63,14 +65,16 @@ node server.js
 cd service-emprunts
 npm install
 node server.js
+```
 # Tourne sur http://localhost:8003
 
-**Terminal 4 : Service Front**
+**Terminal 4 : Service Site Web**
 ```bash
 cd service-front
 npm install
 node server.js
-# Tourne sur http://localhost:8000
+```
+# Tourne sur http://localhost:8080
 
 ---
 
